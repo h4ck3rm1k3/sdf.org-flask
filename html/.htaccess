@@ -1,0 +1,17 @@
+#RewriteEngine On
+Options FollowSymLinks
+#RewriteCond %{REQUEST_FILENAME} !-f # Don't interfere with static files
+#RewriteBase /
+#RewriteRule ^/flask/(.*)$ /cgi-bin/helloflask.cgi/$1 []L
+#RewriteRule "^/flask/(.*)$" "/cgi-bin/helloflask.cgi/$1" [R,L]
+#RewriteRule ^/(.*) http://h4ck3rm1k3.sdf.org/cgi-bin/hello2.cgi [L]
+#RewriteRule ^/.* /cgi-bin/hello2.cgi
+
+ErrorDocument 404 /cgi-bin/helloflask.cgi
+#ErrorDocument 404 /cgi-bin/hello2.cgi
+ErrorDocument 500 /cgi-bin/helloerr.cgi
+
+AddHandler cgi-script .cgi
+Options +ExecCGI
+
+allow from all
