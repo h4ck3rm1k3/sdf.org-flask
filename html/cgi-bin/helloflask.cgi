@@ -1,23 +1,4 @@
 #!/usr/pkg/bin/python
-<<<<<<< HEAD
-import os
-#REQUEST_URI -> /cgi-bin/hello2.cgi?q=fsdfsfds
-#REQUEST_METHOD -> GET
-#QUERY_STRING -> q=fsdfsfds
-if 'REQUEST_URI' in os.environ:
-    if 'SCRIPT_NAME' in os.environ:
-        os.environ['REQUEST_URI']= os.environ['SCRIPT_NAME'] + "/" + os.environ['REQUEST_URI']
- 
-f = open ('/tmp/mike.txt','w')
-
-
-from time import gmtime, strftime
-nowt=strftime("%Y-%m-%d %H:%M:%S", gmtime())
-f.write("Hello Flask:" + nowt +"\n") 
-for k,v in os.environ.items():
-    f.write ("""{0} {1}\n""" .format(k,v) )
-f.close()
-=======
 #-*- coding: utf-8 -*-
 
 import sys
@@ -25,7 +6,7 @@ libbase='/www/gm/h/h4ck3rm1k3/lib/'
 sys.path.append(libbase)
 sys.path.append(libbase+'foursquare-master')
 sys.path.append(libbase+'pyGPG-master')
-sys.path.append(libbase+'flask-session-master/build/lib')
+sys.path.append(libbase+'flask-session-master') #/build/lib
 from flask_session import Session
 from flask import Flask, session
 from flask import Response
@@ -33,8 +14,6 @@ from flask import make_response, request, current_app
 from flask import request
 from flask import url_for
 
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
 from datetime import timedelta
 
 from functools import update_wrapper
@@ -110,7 +89,6 @@ def crossdomain(origin=None, methods=None, headers=None,
     return decorator
 
 c=GPGConfig();
-#c.set_key('gpg_command','/usr/pkg/bin/gpg')
 DEBUG=True
 
 if 'REQUEST_URI' in os.environ:
@@ -138,31 +116,12 @@ requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
 requests_log.propagate = True
 
->>>>>>> abe0a46... update
 
 if 'REDIRECT_STATUS' in os.environ:
     del os.environ['REDIRECT_STATUS']
 if 'REDIRECT_URL' in os.environ:
     del os.environ['REDIRECT_URL']
 
-<<<<<<< HEAD
-
-
-from flask import Flask
-from wsgiref.handlers import CGIHandler
-import cgitb;
-cgitb.enable()  # This line enables CGI error reporting
-import traceback
-
-app = Flask(__name__)
-
-from flask import request
-from flask import url_for
-
-
-from flask import Response
-import pprint
-=======
 cgitb.enable()  # This line enables CGI error reporting
 
 app = Flask(__name__)
@@ -183,51 +142,54 @@ def error_report(error):
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tb = u"\n".join(traceback.format_tb(exc_traceback))
     return "500 error <h1>%s</h1><pre>%s</pre> <pre>%s</pre>" % (error , tb, "\n".join(l2))
->>>>>>> abe0a46... update
 
 @app.route("/test")
 def test():
         str = pprint.pformat(request.environ, depth=5)
         return Response(str, mimetype="text/text")
 
-<<<<<<< HEAD
-import urllib
-=======
 @app.route("/test2")
 def test2():
         str = pprint.pformat(request.environ, depth=5)
         return Response(str, mimetype="text/html")
+    
+@app.route("/gpg/testpostkey", methods=['POST'])
+@crossdomain(origin='*',    methods=['POST'])
+def gpg_testpostkey():
+    sid = session.sid
+    session.permanent = True
+    session['sid1']=sid
+    return Response("ok sid %s" % sid, mimetype="text/html")
 
 @app.route("/gpg/postkey", methods=['POST'])
 @crossdomain(origin='*',    methods=['POST'])
 def gpg_postkey():
+    #sid =  request.args.get('sid')
+    #session.sid = sid
     data = {}
-    sid = session.sid
-
-    data['sid']=sid
-
+    #data['sid']=sid
     pubkey = "None"
     keyid="none"
-    keyfinger="none"
 
     if 'user_pubkey' not in session:
         if 'pubkey' in request.form:
             pubkey=session['user_pubkey']=request.form['pubkey']
             keyid=session['keyid']=request.form['keyid']
-            keyfinger=session['keyfinger']=request.form['keyfinger']
-            session.permanent = True
+#            keyfinger=session['keyfinger']=request.form['keyfinger']
+#            session.permanent = True
         else:
             data['nopubkey']='yes'
+            filename="keys/%s.pub" % "unknown"
     else:
         #session['user_pubkey']
         sid = session.sid
         #filename="keys/%s.pub" % sid
         pubkey=session['user_pubkey']
         keyid=session['keyid']
-        keyfinger=session['keyfinger']
-        data['hassession']='yes'
+        #keyfinger=session['keyfinger']
+        data['hassession']='yes'        
+    filename="keys/%s.pub" % keyid
         
-    filename="keys/%s.pub" % keyfinger
     data['filename']=filename
     g=GPG(c,logger)
     if not os.path.isfile(filename) :
@@ -256,7 +218,7 @@ def gpg_postkey():
         'environ' :request.environ,
         'form pubkey' :request.form['pubkey'],
         'form keyid' :request.form['keyid'],
-        'form keyfinger' :request.form['keyfinger'],
+        #'form keyfinger' :request.form['keyfinger'],
         'form' :request.form,
         'headers' :request.headers,
         'data' :request.data,
@@ -269,22 +231,18 @@ def gpg_postkey():
     logger.debug("debug %s" % str)
     return Response("Key:%s" % str, mimetype="text/html")
 
-# @app.route("/gpg/postkey2", methods=['GET'])
-# def gpg_postkey2():
-#     session['user_pubkey']="test"
-#     str = pprint.pformat({
-#         'environ' :request.environ,
-#         'form' :request.form['pubkey'],
-#         'headers' :request.headers,
-#         'data' :request.data,
-#         'pubkey' : session['user_pubkey'],
-#         'session' : session.__dict__,
-#     }, depth=5)
-#     return Response("Key:%s" % str, mimetype="text/html")
-
+@app.route("/session/get")
+@crossdomain(origin='*')
+def session_get():
+    sid =session.sid
+    return Response("%s" % sid, mimetype="text/html")
+    
 @app.route("/gpg/secrets")
 @crossdomain(origin='*')
 def gpg_secrets():
+    #sid =  request.args.get('sid')
+    #session.sid = sid
+    
     keyid =  request.args.get('keyid')
     astr = pprint.pformat({
         'keyid': keyid
@@ -312,26 +270,11 @@ def gpg_secrets():
 #     return Response(encoded, mimetype="text/html")
 
 
-
-
-# @app.route("/secrets/<iv>")
-# def getsecrets(iv):
-#     access_token=session['foursquare_access']
-#     session.permanent = True
-#     ctr = Counter.new(128, initial_value=long(iv.encode('hex'), 16))
-#     cipher = AES.new(secret_key,AES.MODE_CTR, counter=ctr)
-
-#     data =  {
-#         'foursquare': { 'access_token': access_token },
-#         #'all' : session.__dict__
-#     }
-#     str = pprint.pformat(data, depth=5)
-#     encoded = base64.b64encode(cipher.encrypt(str))
-#     return Response(encoded, mimetype="text/html")
-
-
 @app.route("/foursquare/users/<user_id>")
 def foursquare_users(user_id):
+    #sid =  request.args.get('sid')
+    #session.sid = sid
+
     access_token=session['foursquare_access']
     session.permanent = True
     client = foursquare.Foursquare(access_token=access_token)
@@ -344,6 +287,8 @@ def foursquare_users(user_id):
 
 @app.route("/foursquare/oauth/authorize")
 def foursquare_oauth_authorize():
+    #sid =  request.args.get('sid')
+    #session.sid = sid
 
     try :
         red = url_for('foursquare_oauth_authorize', _external=True)
@@ -399,7 +344,6 @@ def foursquare_main():
         return Response(error_report(e), mimetype="text/html")
 
 
->>>>>>> abe0a46... update
 
 def list_routes():
     o = ""
@@ -408,11 +352,7 @@ def list_routes():
         options = {}
         for arg in rule.arguments:
             options[arg] = "[{0}]".format(arg)
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> abe0a46... update
         methods = ','.join(rule.methods)
         url = url_for(rule.endpoint, **options)
         line = urllib.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
@@ -422,8 +362,6 @@ def list_routes():
             o=o+ "ROUTE" +line + "\n"
     return o
 
-<<<<<<< HEAD
-=======
 @app.errorhandler(500)
 def internal_error(error):
     f= open ('logs/mike.txt')
@@ -432,7 +370,6 @@ def internal_error(error):
 
     return "500 error <h1>%s</h1> <pre>%s</pre>" % (error , "\n".join(l2))
 
->>>>>>> abe0a46... update
 @app.errorhandler(404)
 def page_not_found(e):
     pageName =  request.args.get('url')
@@ -444,11 +381,7 @@ def page_not_found(e):
 @app.route('/<path:path>')
 def catch_all(path):
         return 'You want path: %s' % path
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> abe0a46... update
 
 @app.route('/')
 def hello_world():
@@ -463,17 +396,5 @@ def hello_world2():
 def hello_world3(anyt):
     return 'Foo Hello, World3! %s' % anyt
 
-<<<<<<< HEAD
-# class ScriptNameStripper(object):
-#     def __init__(self, app):
-#         self.app = app
-#     def __call__(self, environ, start_response):
-#         environ['SCRIPT_NAME'] = ''
-#         return self.app(environ, start_response)
-
-# app = ScriptNameStripper(app)
-from werkzeug.debug import DebuggedApplication                                   
-=======
->>>>>>> abe0a46... update
 
 CGIHandler().run(DebuggedApplication(app))
