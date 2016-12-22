@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Options FollowSymLinks
 RewriteRule (.*) /cgi-bin/hello2.cgi$1 [L]
 ErrorDocument 404 /cgi-bin/hello404.cgi
@@ -5,3 +6,27 @@ ErrorDocument 500 /cgi-bin/helloerr.cgi
 AddHandler cgi-script .cgi
 Options +ExecCGI
 allow from all
+=======
+RewriteEngine On
+#RewriteLog "/tmp/mike.txt"
+#RewriteLogLevel 3
+Options FollowSymLinks
+#RewriteCond %{REQUEST_FILENAME} !-f # Don't interfere with static files
+RewriteBase /
+#RewriteRule ^/flask/(.*)$ /cgi-bin/helloflask.cgi/$1 []L
+#RewriteRule "^/flask/(.*)$" "/cgi-bin/helloflask.cgi/$1" [R,L]
+#RewriteRule ^/(.*)$ /cgi-bin/helloflask.cgi/$1 [L]
+#RewriteRule ^/.* /cgi-bin/hello2.cgi
+RewriteRule "^a/(.*)" /cgi-bin/helloflask.cgi/$1 [L]
+#ErrorDocument 404 /cgi-bin/hello404.cgi
+#ErrorDocument 500 /cgi-bin/helloerr.cgi
+
+AddHandler cgi-script .cgi
+Options +ExecCGI
+
+allow from all
+
+#<Location "/ssl">
+#Allow from all
+#</Location>	
+>>>>>>> e7b44e2... v1
