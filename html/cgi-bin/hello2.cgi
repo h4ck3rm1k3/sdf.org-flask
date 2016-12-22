@@ -16,3 +16,17 @@ close F;
 print "h2>calling flask</h2>\n";
 system('./helloflask.cgi');
 
+<<<<<<< HEAD
+=======
+print "h2>logs</h2>\n";
+print "<pre>";
+open (F,"<","/tmp/mike.txt");
+while(<F>)    {
+    print "<p>$_</p>";
+}
+close F;
+
+print "</pre>";
+
+
+>>>>>>> abe0a46... update
