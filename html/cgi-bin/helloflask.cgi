@@ -94,7 +94,7 @@ DEBUG=True
 if 'REQUEST_URI' in os.environ:
     if 'SCRIPT_NAME' in os.environ:
         os.environ['REQUEST_URI']= os.environ['SCRIPT_NAME'] + "/" + os.environ['REQUEST_URI']
-#f = open ('logs/mike.txt','w')
+#f = open ('logs/mike2.txt','w')
 http_client.HTTPConnection.debuglevel = 1
 #nowt=strftime("%Y-%m-%d %H:%M:%S", gmtime())
 #f.write("Hello Flask:" + nowt +"\n")
@@ -136,7 +136,7 @@ def debug():
 
 
 def error_report(error):
-    f= open ('logs/mike.txt')
+    f= open ('logs/mike2.txt')
     l2 = f.readlines()
     f.close()
     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -242,16 +242,22 @@ def session_get():
 def gpg_secrets():
     #sid =  request.args.get('sid')
     #session.sid = sid
-    
+
+    data = {}
+    for k in session.keys():
+        v = session[k]
+        data[k]=v
+        
     keyid =  request.args.get('keyid')
     astr = pprint.pformat({
-        'keyid': keyid
-    #         'environ' :request.environ,
-    #         'form' :request.form,
-    #         'headers' :request.headers,
-    #         'data' :request.data,
-    #         'session' : session.__dict__,
-    #         'sesskeys': session.keys(),
+        'keyid': keyid,
+        'session_data': data,
+        'environ' :request.environ,
+        'form' :request.form,
+        'headers' :request.headers,
+        'data' :request.data,
+        'session' : session.__dict__,
+        'sesskeys': session.keys(),
     }, depth=5)
     if keyid is not None:
         g=GPG(c,logger)
@@ -271,6 +277,7 @@ def gpg_secrets():
 
 
 @app.route("/foursquare/users/<user_id>")
+@crossdomain(origin='*')
 def foursquare_users(user_id):
     #sid =  request.args.get('sid')
     #session.sid = sid
@@ -283,22 +290,17 @@ def foursquare_users(user_id):
     str = pprint.pformat(data, depth=5)
     return Response(str, mimetype="text/html")
 
-
-
-@app.route("/foursquare/oauth/authorize")
-def foursquare_oauth_authorize():
-    #sid =  request.args.get('sid')
-    #session.sid = sid
-
+@app.route("/foursquare/oauth/authorize/<sid>")
+@crossdomain(origin='*')
+def foursquare_oauth_authorize(sid):
     try :
-        red = url_for('foursquare_oauth_authorize', _external=True)
+        red = url_for('foursquare_oauth_authorize',sid=sid,  _external=True)
 
         foursquare_client = foursquare.Foursquare(
             client_id=secrets.foursquare_client_id,
             client_secret=secrets.foursquare_client_secret,
             redirect_uri= red
         )
-
         code =  request.args.get('code')
         #return "OK:" + code
         try:
@@ -310,40 +312,39 @@ def foursquare_oauth_authorize():
 
         #return "OK" + code + " access" + access_token
         session['foursquare_access'] = access_token
+        session['foursquare_code'] = code
         session.permanent = True
-        str = """{0} access code {1}""".format(code, access_token)
+        str = """{0} access code {1} red {2}""".format(code, access_token, red)
         return Response(str, mimetype="text/html")
 
     except Exception as e:
         return Response(error_report(e), mimetype="text/html")
 
 @app.route("/foursquare")
+@crossdomain(origin='*')
 def foursquare_main():
-
     try :
-
+        sid = session.sid
         # Construct the client object
-
-        red = url_for('foursquare_oauth_authorize', _external=True)
-
+        red = url_for('foursquare_oauth_authorize',sid=sid, _external=True)
+        #+ "&sid=%s" % session.sid
         foursquare_client = foursquare.Foursquare(
             client_id=secrets.foursquare_client_id,
             client_secret=secrets.foursquare_client_secret,
             redirect_uri= red
         )
-
         # Build the authorization url for your app
+        #auth_url = foursquare_client.oauth.auth_url_token()
         auth_url = foursquare_client.oauth.auth_url()
+        session['foursquare_auth'] = auth_url
+        session.permanent = True
         astr = """
         <a href='{0}'>auth callback</a>
         <a href='{1}'>auth url</a>
         """.format(red, auth_url)
-
         return Response(astr, mimetype="text/html")
     except Exception as e:
         return Response(error_report(e), mimetype="text/html")
-
-
 
 def list_routes():
     o = ""
@@ -364,7 +365,7 @@ def list_routes():
 
 @app.errorhandler(500)
 def internal_error(error):
-    f= open ('logs/mike.txt')
+    f= open ('logs/mike2.txt')
     l2 = f.readlines()
     f.close()
 
