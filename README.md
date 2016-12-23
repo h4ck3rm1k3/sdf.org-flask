@@ -59,3 +59,31 @@ The user passes the keyid in the call, and the data is encrypted with that keyid
 https://github.com/h4ck3rm1k3/extractr/blob/master/templates/gpg_read.html
 https://github.com/openpgpjs/openpgpjs
 
+
+# Support for oauth, example with foursquare :
+
+1. start the process (static/file url)
+https://github.com/h4ck3rm1k3/extractr/blob/master/templates/foursquare.html
+
+1.2. this sends the call to the server 
+https://github.com/h4ck3rm1k3/sdf.org-flask/blob/encrypt/html/cgi-bin/helloflask.cgi#L323
+
+1.2.1 that then calls:
+auth_url = foursquare_client.oauth.auth_url()
+to get 
+https://foursquare.com/oauth2/authenticate?redirect_uri=http%3A%2F%2Fh4ck3rm1k3.sdf.org%2Fcgi-bin%2Fhelloflask.cgi%2Ffoursquare%2Foauth%2Fauthorize%2F<sid>&response_type=code&client_id=<clientid>
+
+where <sid> contains the sid to write the data to and <clientid> identifies the app. Note, this is one security issue that users could overwrite someone elses token if you know thier sid, but the cannot get access to yours.
+
+We can add in some extra client identification here, or have the javascript manage the calling of the foursquare via js, need to look into that more.
+
+1.2.2 The user clicks on this url and authenticates with foursquare and is sent back to :
+http://h4ck3rm1k3.sdf.org/cgi-bin/helloflask.cgi/foursquare/oauth/authorize/<sid>
+
+1.2.3 This enters into /foursquare/oauth/authorize/<sid> 
+https://github.com/h4ck3rm1k3/sdf.org-flask/blob/encrypt/html/cgi-bin/helloflask.cgi#L293
+where the access token is read out and put into the users session.
+
+2. the user then can read the access token from the server (static/file url) via gpg encrypted data.
+https://github.com/h4ck3rm1k3/extractr/blob/master/templates/gpg_read.html
+
