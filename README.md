@@ -77,6 +77,8 @@ where <sid> contains the sid to write the data to and <clientid> identifies the 
 
 We can add in some extra client identification here, or have the javascript manage the calling of the foursquare via js, need to look into that more.
 
+see #session-locking
+
 1.2.2 The user clicks on this url and authenticates with foursquare and is sent back to :
 http://h4ck3rm1k3.sdf.org/cgi-bin/helloflask.cgi/foursquare/oauth/authorize/<sid>
 
@@ -87,3 +89,30 @@ where the access token is read out and put into the users session.
 2. the user then can read the access token from the server (static/file url) via gpg encrypted data.
 https://github.com/h4ck3rm1k3/extractr/blob/master/templates/gpg_read.html
 
+#Session Locking
+
+## Problem :
+The problem with using oauth over http is associating the session of the orginator with that of the callback from the user.
+The originator is in file: domainless html page, the callback is redirected to the server and will get a new session/cookie. We pass the sid in the callback url and overwrite it, but this can be spoofed.
+
+## Solution idea :
+We should not allow this callback to modify the session data until the user can send a signed request to confirm the action.
+
+## Proposal (not implemented yet)
+
+1. The client could initiate a gpg signed request using the public key with :
+/server/create-session
+The session would return the session key encrypted.
+
+2. The client would then be associated with that gpg key, ip address and generated session.
+
+3. Insecure operations that follow are limited to the ip address.
+
+The session token that is transmitted would be locked into the ip address and only that ip would be allowed to post. 
+In a natted environment an inside attacker could then still spoof the data, but it wont be commited until picked up.
+
+If there are more than one response pending (spoofing) the entire operation will be cancelled. Buffer size is basically one per client on the server.
+
+4. The client will get the authentication token in the redirect url and then maybe transmit it to the server via gpg, or just keep it client sided.
+
+5. The client will then unlock the session and optionally commit the data on the server with a gpg request. This will release the lock.
